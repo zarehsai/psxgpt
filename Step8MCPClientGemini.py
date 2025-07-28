@@ -65,7 +65,7 @@ streaming_llm = GoogleGenAI(
 
 # One "strict JSON" instance for **query-parsing** (lower temp, 8k tokens max)
 gemini_parser = GoogleGenAI(
-    model="models/gemini-2.5-pro",
+    model="models/gemini-2.5-flash",
     api_key=GEMINI_API_KEY,
     temperature=0.0,
     max_tokens=8000,
@@ -118,15 +118,19 @@ def get_conversation_context() -> ConversationContext:
     context_data = cl.user_session.get("conversation_context")
     if context_data:
         try:
-            return ConversationContext.model_validate(context_data)
-        except Exception:
-            pass  # Create new context if validation fails
+            context = ConversationContext.model_validate(context_data)
+            log.info(f"📝 Retrieved session context with {len(context.messages)} messages")
+            return context
+        except Exception as e:
+            log.warning(f"⚠️ Failed to validate session context: {e}")
     
+    log.info("🆕 Creating new conversation context (no session data)")
     return ConversationContext()
 
 def save_conversation_context(context: ConversationContext):
     """Save conversation context to user session"""
     cl.user_session.set("conversation_context", context.model_dump())
+    log.info(f"💾 Saved session context with {len(context.messages)} messages")
 
 # ─────────────────────────── Data Models ────────────────────────────────
 class QueryPlan(BaseModel):
