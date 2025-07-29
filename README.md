@@ -74,7 +74,7 @@ Download and install your chosen editor following the installer instructions.
    - **64-bit Git for Windows Setup** (for x64-based PC)
    - **ARM64 Git for Windows Setup** (for ARM64-based PC)
 4. Run the installer and follow the setup wizard
-5. Use all default settings unless you have specific preferences
+5. **Installation tip:** The installer will ask many questions about editors, line endings, etc. For this project, these choices don't matter - simply keep clicking "Next" with the default options
 6. When installation is complete, you can access Git through "Git Bash" or Command Prompt
 
 **For Mac Users:**
