@@ -33,37 +33,66 @@ psxGPT processes financial documents through an 8-step pipeline:
 
 ## How to Get Started
 
+### Overview
+
+This guide walks you through setting up psxGPT step-by-step. The process takes about 30-45 minutes and involves:
+
+1. **Installing required software** (Git, Python, PostgreSQL, code editor)  
+2. **Downloading the project** from GitHub
+3. **Getting API keys** for AI services
+4. **Configuring the environment** and installing dependencies
+5. **Setting up the database** and starting the application
+
 ### Prerequisites
 
-- **Python 3.11.9 (64-bit)** - This specific version is recommended for maximum stability and compatibility
-- **PostgreSQL 14.18** - Stable database version with proven compatibility (avoid newer versions for best results)
-- **Chainlit 2.5.5** - Web interface framework (automatically installed with project dependencies)
-- Git - for downloading the code (any recent version works)
-- API Keys:
-  - [Google Gemini](https://ai.google.dev/) - for embeddings and AI analysis
-  - [LlamaParse](https://docs.cloud.llamaindex.ai/llamacloud/getting_started/api_key) - for PDF processing (free tier: 3,000 pages)
-  - [Anthropic](https://www.anthropic.com/) - for Claude AI integration
-  - [Mistral](https://console.mistral.ai/) - for scanned document OCR
+Before starting, you'll need:
+- A computer with Windows, macOS, or Linux
+- Internet connection for downloads
+- API keys for AI services (some free, some require credit card)
 
-### Step 1: Install Git
+### Step 1: Install Code Editor (IDE)
+
+Choose one of these beginner-friendly code editors:
+- **[Windsurf](https://www.windsurf.io/)** (Recommended - AI-powered coding assistant)
+- **[Cursor](https://cursor.sh/)** (AI-powered VS Code alternative)
+- **[VS Code](https://code.visualstudio.com/)** (Popular free editor)
+
+Download and install your chosen editor following the installer instructions.
+
+### Step 2: Install Git
+
+**For Windows Users:**
+1. **Check Your PC Type First:**
+   - Press `Windows key + R` to open the Run dialog
+   - Type `msinfo32` and press Enter
+   - Look for "System Type" in the System Information window:
+     - **x64-based PC** = Intel/AMD processor (most common)
+     - **ARM64-based PC** = ARM processor (newer Surface devices, some laptops)
+
+2. Go to [https://git-scm.com/download/win](https://git-scm.com/download/win)
+3. Download the correct installer for your system:
+   - **64-bit Git for Windows Setup** (for x64-based PC)
+   - **ARM64 Git for Windows Setup** (for ARM64-based PC)
+4. Run the installer and follow the setup wizard
+5. Use all default settings unless you have specific preferences
+6. When installation is complete, you can access Git through "Git Bash" or Command Prompt
 
 **For Mac Users:**
-1. Open Terminal (press `Cmd + Space`, type "Terminal", and press Enter)
-2. Type the following command and press Enter:
+1. **Check Your Mac Type:**
+   - Click the Apple menu → "About This Mac"
+   - Look at "Chip" or "Processor":
+     - **Intel** = Intel-based Mac
+     - **Apple M1/M2/M3** = Apple Silicon Mac (ARM-based)
+
+2. Open Terminal (press `Cmd + Space`, type "Terminal", and press Enter)
+3. Type the following command and press Enter:
    ```
    git --version
    ```
-3. If Git is not installed, macOS will prompt you to install it automatically
-4. Follow the installation prompts
+4. If Git is not installed, macOS will prompt you to install it automatically
+5. Follow the installation prompts
 
-**For Windows Users:**
-1. Go to [https://git-scm.com/download/win](https://git-scm.com/download/win)
-2. Download the installer for your system (64-bit recommended)
-3. Run the installer and follow the setup wizard
-4. Use all default settings unless you have specific preferences
-5. When installation is complete, you can access Git through "Git Bash" or Command Prompt
-
-### Step 2: Install Python 3.11.9 (64-bit)
+### Step 3: Install Python 3.11.9 (64-bit)
 
 **IMPORTANT:** You must install Python 3.11.9 specifically, and it must be the 64-bit version for maximum stability.
 
@@ -81,46 +110,6 @@ psxGPT processes financial documents through an 8-step pipeline:
 3. Download "macOS 64-bit universal2 installer"
 4. Run the installer and follow the prompts
 5. **Note:** Python is automatically added to PATH on macOS
-
-### Step 3: Install Code Editor (IDE)
-
-Choose one of these beginner-friendly code editors:
-- **[Windsurf](https://www.windsurf.io/)** (Recommended - AI-powered coding assistant)
-- **[Cursor](https://cursor.sh/)** (AI-powered VS Code alternative)
-- **[VS Code](https://code.visualstudio.com/)** (Popular free editor)
-
-Download and install your chosen editor following the installer instructions.
-
-### Step 4: Download Pre-Built Search Index (Recommended)
-
-**Option A: Use Pre-Built Index (Faster)**
-
-To save time, you can download a pre-built search index instead of creating one from scratch:
-
-1. Download the pre-built index from Google Drive:
-   [Download gemini_index_metadata.zip](https://drive.google.com/file/d/1yeH1ib5G1jBnqhzzoYBoZ0yz5s1y9MOP/view?usp=drive_link)
-
-2. After downloading:
-   - **Unzip the file** - you should see a folder called `gemini_index_metadata`
-   - **Copy this entire folder** to your psxChatGPT project directory
-   - The folder should be placed directly in the main project folder (same level as the Python files)
-
-**Option B: Create Your Own Index (Takes Longer)**
-
-Alternatively, you can create the search index yourself using `Step6CreateEmbeddings.py`, but this will take significantly longer as it processes all the financial documents and creates embeddings.
-
-### Step 5: Install Playwright (Required for Step 1 Files)
-
-Playwright is needed to run the Step 1 files that download financial documents. After installing Python and setting up your project, you'll need to install Playwright:
-
-1. Open Terminal (Mac) or Command Prompt (Windows)
-2. Navigate to your project folder
-3. Run this command:
-   ```
-   playwright install
-   ```
-
-This installs the browser components needed for automated document downloading.
 
 ### Step 4: Install PostgreSQL 14.18 Database
 
@@ -152,31 +141,29 @@ This installs the browser components needed for automated document downloading.
 - **Homebrew (Mac):** `brew install postgresql@14`
 - **Package Manager (Linux):** Check your distribution's package manager for PostgreSQL 14.x
 
-### Step 5: Install uv Package Manager
+### Step 5: Download and Setup psxGPT
 
-**For Windows Users:**
-1. Open Command Prompt or PowerShell:
-   - Press `Windows key + R`, type `cmd`, press Enter
-   - OR Press `Windows key + X`, select "Windows PowerShell (Admin)"
-2. Run this command:
-   ```
-   powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
-   ```
+**Recommended: Fast Clone (Downloads Latest Code Only)**
+```bash
+git clone --depth 1 https://github.com/ishaheen10/psxgpt.git
+cd psxgpt
+```
 
-**For Mac Users:**
-1. Open Terminal:
-   - Press `Command + Spacebar`, type "Terminal", press Enter
-   - OR Go to Applications > Utilities > Terminal
-2. Run this command:
-   ```
-   curl -LsSf https://astral.sh/uv/install.sh | sh
-   ```
+**Alternative: Full History Clone (Larger Download)**
+```bash
+git clone https://github.com/ishaheen10/psxgpt.git
+cd psxgpt
+```
+
+> **💡 Note:** The repository has been optimized for size. The shallow clone (`--depth 1`) downloads only the latest code (~19MB) instead of full history, making setup much faster for most users.
 
 ### Step 6: Get Your API Keys
 
 You'll need to sign up for these services and get API keys:
 
-1. **[Google Gemini API](https://ai.google.dev/)** (Credit card required)
+**Required (Free - No Credit Card Needed):**
+
+1. **[Google Gemini API](https://ai.google.dev/)** 
    - Click "Get API key in Google AI Studio"
    - Sign in with your Google account
    - Create a new API key
@@ -188,13 +175,15 @@ You'll need to sign up for these services and get API keys:
    - Create a new API key
    - Copy the key (free tier includes 3,000 pages)
 
-3. **[Anthropic API](https://www.anthropic.com/)** (Credit card required)
+**Optional (Credit Card Required):**
+
+3. **[Anthropic API](https://www.anthropic.com/)** 
    - Sign up for an Anthropic account
    - Go to your dashboard
    - Create an API key
    - Copy the key
 
-4. **[Mistral API](https://console.mistral.ai/)** (Credit card required, optional for scanned documents)
+4. **[Mistral API](https://console.mistral.ai/)** (for scanned document OCR)
    - Sign up for Mistral AI
    - Go to API Keys
    - Create a new key
@@ -202,38 +191,17 @@ You'll need to sign up for these services and get API keys:
 
 **Save these keys safely** - you'll paste them into your .env file in the next step.
 
-### Version Compatibility Note
+### Step 7: Configure Environment and Install Dependencies
 
-The specified versions (Python 3.11.9, PostgreSQL 14.18, Chainlit 2.5.5) are recommended for maximum stability and have been thoroughly tested with this project. While newer versions may work, these specific versions ensure the most reliable experience and avoid potential compatibility issues.
+1. **Create your environment file:**
+   - Right-click on the `.env.example` file in your project folder
+   - Select "Copy" from the context menu
+   - Right-click in the same folder and select "Paste"
+   - Rename the copied file from `.env.example - Copy` to `.env`
 
-### Step 7: Download and Setup psxGPT
-
-**Recommended: Fast Clone (Downloads Latest Code Only)**
-```bash
-git clone --depth 1 https://github.com/ishaheen10/psxgpt.git
-cd psxgpt
-
-# Setup environment
-uv venv && source .venv/bin/activate  # Mac
-uv venv && .venv\Scripts\activate     # Windows
-uv sync
-```
-
-**Alternative: Full History Clone (Larger Download)**
-```bash
-git clone https://github.com/ishaheen10/psxgpt.git
-cd psxgpt
-```
-
-> **💡 Note:** The repository has been optimized for size. The shallow clone (`--depth 1`) downloads only the latest code (~19MB) instead of full history, making setup much faster for most users.
-
-#### Configure API Keys
-1. Copy the example file:
-   ```bash
-   cp .env.example .env
-   ```
-
-2. Open the `.env` file in your code editor and replace the placeholder values with your actual API keys:
+2. **Configure your API keys and database:**
+   - Double-click the `.env` file to open it in your code editor
+   - Replace the placeholder values with your actual API keys:
    ```
    # API Keys for psxGPT
    GEMINI_API_KEY=your_actual_gemini_key_here
@@ -241,9 +209,12 @@ cd psxgpt
    LLAMA_CLOUD_API_KEY=your_actual_llama_cloud_key_here
    MISTRAL_API_KEY=your_actual_mistral_key_here
    
-   # Database URLs - Standard format with default 'postgres' user
+   # Database URL - Standard format with default 'postgres' user
    DATABASE_URL=postgresql://postgres:your_password@localhost:5432/analyst_psx
-   DATABASE_DIRECT_URL=postgresql://postgres:your_password@localhost:5432/analyst_psx
+   
+   # Admin login credentials for the web interface
+   ADMIN_USERNAME="analyst@psx.com"
+   ADMIN_PASSWORD="analyst123"
    ```
 
 **Database URL Format Explanation:**
@@ -252,58 +223,72 @@ cd psxgpt
 - `localhost:5432` = Database server location and port (standard)
 - `analyst_psx` = Database name (created in next step)
 
-**Alternative Setup:** If you created a custom user during PostgreSQL installation, your URL might look like:
-```
-DATABASE_URL=postgresql://your_custom_username:your_password@localhost:5432/analyst_psx
-```
-
-#### Configure Chainlit Settings
-1. Open `.chainlit/config.toml` in your code editor
-2. Update the database configuration if needed:
-   ```toml
-   [project]
-   # Whether to enable telemetry (default: true). No personal data is collected.
-   enable_telemetry = true
-   
-   # Duration (in seconds) during which the session is saved when the connection is lost
-   session_timeout = 3600
-   
-   # Duration (in seconds) of the user session expiry
-   user_session_timeout = 1296000  # 15 days
+3. **Install the project dependencies:**
+   ```bash
+   pip install uv
+   uv sync
    ```
 
-#### Setup Database
-```bash
-createdb analyst_psx
-psql -d analyst_psx -f chainlit_schema_psx.sql
-```
+### Version Compatibility Note
 
-### Quick Start Options
+The specified versions (Python 3.11.9, PostgreSQL 14.18, Chainlit 2.5.5) are recommended for maximum stability and have been thoroughly tested with this project. While newer versions may work, these specific versions ensure the most reliable experience and avoid potential compatibility issues.
 
-**Option A: Use Existing Data (Fastest)**
-If you have a `psx_bank_metadata` folder with processed financial data:
-```bash
-python Step6CreateEmbeddings.py
-python Step8MCPClientPsxGPT.py
-```
-Access at http://localhost:8000 (Login: user@psx.com / user2024)
+### Step 8: Setup Database
 
-**Option B: Process Your Own PDFs**
-To analyze your own financial documents:
-```bash
-# Option 1: Download from PSX (Pakistan Stock Exchange only)
-python Step1DownloadPDFsSearch.py  # Downloads from PSX website
-# OR modify script for other sources, or use browser-use for general purpose search
+1. **Create the database:**
+   ```bash
+   createdb analyst_psx
+   ```
 
-# Option 2: Place your own PDFs in psx_bank_reports/ folder, then run:
-python Step2ConvertPDFtoMarkdown.py  # Uses LlamaParse or Tool1Mistral_OCR.py for scans
-python Step3ChunkMarkdown.py
-python Step4MetaDataTags.py
-python Step5CombineMetaData.py
-python Tool2ValidateProcessing.py   # Verify data quality
-python Step6CreateEmbeddings.py
-python Step8MCPClientPsxGPT.py
-```
+2. **Setup the database schema:**
+   ```bash
+   psql -d analyst_psx -f chainlit_schema_psx.sql
+   ```
+
+### Step 9: Start the Application
+
+**Option A: Use Pre-Built Data (Fastest)**
+
+1. **Download pre-built search index** from Google Drive:
+   [Download gemini_index_metadata.zip](https://drive.google.com/file/d/1yeH1ib5G1jBnqhzzoYBoZ0yz5s1y9MOP/view?usp=drive_link)
+
+2. **Unzip and place in project directory:**
+   - Unzip the file - you should see a folder called `gemini_index_metadata`
+   - Copy this entire folder to your psxChatGPT project directory (same level as Python files)
+
+3. **Start the application:**
+   ```bash
+   python Step6CreateEmbeddings.py
+   python Step8MCPClientPsxGPT.py
+   ```
+
+4. **Access the application:**
+   - Open your browser to http://localhost:8000
+   - Login with: `analyst@psx.com` / `analyst123`
+
+**Option B: Process Your Own Documents**
+
+If you want to analyze your own financial documents:
+
+1. **Install Playwright** (for downloading PDFs from websites):
+   ```bash
+   playwright install
+   ```
+
+2. **Run the processing pipeline:**
+   ```bash
+   # Option 1: Download from PSX website
+   python Step1DownloadPDFsSearch.py
+   
+   # Option 2: Place your own PDFs in psx_bank_reports/ folder, then run:
+   python Step2ConvertPDFtoMarkdown.py
+   python Step3ChunkMarkdown.py
+   python Step4MetaDataTags.py
+   python Step5CombineMetaData.py
+   python Tool2ValidateProcessing.py   # Verify data quality
+   python Step6CreateEmbeddings.py
+   python Step8MCPClientPsxGPT.py
+   ```
 
 *Note: Step1 scripts are designed for PSX website. For other data sources, modify the download scripts or use a browser automation tool like browser-use.*
 
@@ -332,10 +317,10 @@ To adapt psxGPT for different financial datasets:
 ## Authentication
 
 **Default Login Credentials:**
-- **Username:** `user@psx.com`
-- **Password:** `user2024`
+- **Username:** `analyst@psx.com`
+- **Password:** `analyst123`
 
-*Note: These are demo credentials hardcoded for testing. For production use, implement proper authentication.*
+*Note: These are demo credentials configured in your .env file. For production use, implement proper authentication.*
 
 ## 📄 License
 
