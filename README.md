@@ -35,9 +35,10 @@ psxGPT processes financial documents through an 8-step pipeline:
 
 ### Prerequisites
 
-- **Python 3.11.10 (64-bit)** - This specific version is required for compatibility
-- Git - for downloading the code
-- PostgreSQL database
+- **Python 3.11.9 (64-bit)** - This specific version is recommended for maximum stability and compatibility
+- **PostgreSQL 14.18** - Stable database version with proven compatibility (avoid newer versions for best results)
+- **Chainlit 2.5.5** - Web interface framework (automatically installed with project dependencies)
+- Git - for downloading the code (any recent version works)
 - API Keys:
   - [Google Gemini](https://ai.google.dev/) - for embeddings and AI analysis
   - [LlamaParse](https://docs.cloud.llamaindex.ai/llamacloud/getting_started/api_key) - for PDF processing (free tier: 3,000 pages)
@@ -62,18 +63,18 @@ psxGPT processes financial documents through an 8-step pipeline:
 4. Use all default settings unless you have specific preferences
 5. When installation is complete, you can access Git through "Git Bash" or Command Prompt
 
-### Step 2: Install Python 3.11.10 (64-bit)
+### Step 2: Install Python 3.11.9 (64-bit)
 
-**IMPORTANT:** You must install Python 3.11.10 specifically, and it must be the 64-bit version.
+**IMPORTANT:** You must install Python 3.11.9 specifically, and it must be the 64-bit version for maximum stability.
 
 **For Mac Users:**
-1. Go to [https://www.python.org/downloads/release/python-31110/](https://www.python.org/downloads/release/python-31110/)
+1. Go to [https://www.python.org/downloads/release/python-3119/](https://www.python.org/downloads/release/python-3119/)
 2. Scroll down to "Files" section
 3. Download "macOS 64-bit universal2 installer"
 4. Run the installer and follow the prompts
 
 **For Windows Users:**
-1. Go to [https://www.python.org/downloads/release/python-31110/](https://www.python.org/downloads/release/python-31110/)
+1. Go to [https://www.python.org/downloads/release/python-3119/](https://www.python.org/downloads/release/python-3119/)
 2. Scroll down to "Files" section
 3. Download "Windows installer (64-bit)" - make sure it says 64-bit
 4. Run the installer
@@ -120,19 +121,23 @@ Playwright is needed to run the Step 1 files that download financial documents. 
 
 This installs the browser components needed for automated document downloading.
 
-### Step 4: Install PostgreSQL Database
+### Step 4: Install PostgreSQL 14.18 Database
 
 **For Windows Users:**
-1. Visit [PostgreSQL Downloads](https://www.postgresql.org/download/windows/)
-2. Download the installer for Windows
+1. Visit [PostgreSQL 14.18 Downloads](https://www.enterprisedb.com/downloads/postgres-postgresql-downloads)
+2. Download PostgreSQL 14.18 for Windows x86-64
 3. Run the installer and follow the setup wizard
-4. Remember the password you set for the "postgres" user
+4. **Important:** Remember the password you set for the "postgres" user - you'll need this for your .env file
 
 **For Mac Users:**
-1. Visit [PostgreSQL Downloads](https://www.postgresql.org/download/macosx/)
-2. Download the installer for macOS
+1. Visit [PostgreSQL 14.18 Downloads](https://www.enterprisedb.com/downloads/postgres-postgresql-downloads)
+2. Download PostgreSQL 14.18 for macOS
 3. Run the installer and follow the setup wizard
-4. Remember the password you set for the "postgres" user
+4. **Important:** Remember the password you set for the "postgres" user - you'll need this for your .env file
+
+**Alternative Installation (Advanced Users):**
+- **Homebrew (Mac):** `brew install postgresql@14`
+- **Package Manager (Linux):** Check your distribution's package manager for PostgreSQL 14.x
 
 ### Step 5: Install uv Package Manager
 
@@ -183,6 +188,10 @@ You'll need to sign up for these services and get API keys:
    - Copy the key
 
 **Save these keys safely** - you'll paste them into your .env file in the next step.
+
+### Version Compatibility Note
+
+The specified versions (Python 3.11.9, PostgreSQL 14.18, Chainlit 2.5.5) are recommended for maximum stability and have been thoroughly tested with this project. While newer versions may work, these specific versions ensure the most reliable experience and avoid potential compatibility issues.
 
 ### Step 7: Download and Setup psxGPT
 
