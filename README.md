@@ -27,7 +27,7 @@ psxGPT processes financial documents through an 8-step pipeline:
 5. **Combine Data** (`Step5CombineMetaData.py`) - Consolidates all metadata
 6. **Build Search Index** (`Step6CreateEmbeddings.py`) - Creates vector embeddings for AI search
 7. **Start Backend Server** (`Step7MCPServerPsxGPT.py`) - Launches the data query server
-8. **Launch Web Interface** (`Step8MCPClientPsxGPT.py`) - Starts the user-friendly chat interface
+8. **Launch Web Interface** (`Step8MCPClientPsxGPT.py` for using with Anthropic API or `Step8MCPClientGemini.py` for using with Gemini API (free tier)) - Starts the user-friendly chat interface
 
 **Quality Assurance:** Use `Tool2ValidateProcessing.py` to verify data quality after processing.
 
