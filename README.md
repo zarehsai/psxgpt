@@ -216,6 +216,12 @@ You'll need to sign up for these services and get API keys:
    ```bash
    .venv\Scripts\activate
    ```
+   
+   **If you get an execution policy error on Windows, run this first:**
+   ```bash
+   Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+   ```
+   Then try the activate command again.
 
    **For Mac/Linux:**
    ```bash
@@ -253,9 +259,19 @@ The specified versions (Python 3.11.9, PostgreSQL 14.18, Chainlit 2.5.5) are rec
    - Unzip the file - you should see a folder called `gemini_index_metadata`
    - Copy this entire folder to your psxChatGPT project directory (same level as Python files)
 
-3. **Start the application:**
+3. **Start the MCP server:**
    ```bash
-   python Step6CreateEmbeddings.py
+   python Step7MCPServerPsxGPT.py
+   ```
+   - Keep this terminal window open - the server needs to stay running
+
+4. **Start the client (in a new terminal):**
+   - Open a second terminal in your code editor (`Ctrl + Shift + ` ` to open new terminal)
+   - Activate your virtual environment again:
+     - **Windows:** `.venv\Scripts\activate` (if execution policy error, run `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser` first)
+     - **Mac/Linux:** `source .venv/bin/activate`
+   - Run the client:
+   ```bash
    chainlit run Step8MCPClientPsxGPT.py
    ```
    
@@ -264,9 +280,10 @@ The specified versions (Python 3.11.9, PostgreSQL 14.18, Chainlit 2.5.5) are rec
    chainlit run Step8MCPClientGemini.py
    ```
 
-4. **Access the application:**
+5. **Access and configure the application:**
    - Open your browser to http://localhost:8000
    - Login with: `analyst@psx.com` / `analyst123`
+   - **Connect to MCP Server:** After login, you'll see instructions in the client interface to connect to the MCP server - follow those prompts to complete the setup
 
 **Option B: Process Your Own Documents**
 
@@ -289,10 +306,22 @@ If you want to analyze your own financial documents:
    python Step5CombineMetaData.py
    python Tool2ValidateProcessing.py   # Verify data quality
    python Step6CreateEmbeddings.py
+   
+   # Start server (keep this terminal open)
+   python Step7MCPServerPsxGPT.py
+   ```
+   
+   **Then in a new terminal, start the client:**
+   ```bash
+   # Activate virtual environment first
+   source .venv/bin/activate   # Mac/Linux
+   .venv\Scripts\activate      # Windows (if execution policy error, run Set-ExecutionPolicy first)
+   
+   # Run client
    chainlit run Step8MCPClientPsxGPT.py
    ```
    
-   **Alternative (for Gemini API free tier):**
+   **Alternative client (for Gemini API free tier):**
    ```bash
    chainlit run Step8MCPClientGemini.py
    ```
