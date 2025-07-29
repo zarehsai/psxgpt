@@ -48,3 +48,8 @@ __pycache__/
 *.tmp
 *.temp
 \n# Secrets\n.env
+psx_bank_reports/
+*.pdf
+gemini_index_metadata/
+output_metadata*/
+psx_*_metadata*/
