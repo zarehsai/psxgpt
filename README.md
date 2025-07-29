@@ -16,6 +16,73 @@ psxGPT will find the necessary information and compile a report using ONLY data 
 - Regulatory filing research
 - Querying Economic Survey of Pakistan or SBP Annual Report
 
+## Quick Start with GitHub Codespaces (Recommended)
+
+Get psxGPT running in under 5 minutes using GitHub Codespaces:
+
+### Step 1: Launch GitHub Codespaces
+1. **Click the green "Code" button** on the [psxGPT GitHub repository](https://github.com/ishaheen10/psxgpt)
+2. **Select "Codespaces" tab** and click "Create codespace on master"
+3. Wait for the environment to load (this may take a few minutes)
+
+### Step 2: Download and Upload Data
+1. **Download the pre-built search index:** [gemini_index_metadata.zip](https://drive.google.com/file/d/1yeH1ib5G1jBnqhzzoYBoZ0yz5s1y9MOP/view?usp=drive_link)
+2. **Unzip the file** on your computer - you should see a folder called `gemini_index_metadata`
+3. **Upload to Codespaces:** Drag and drop the entire `gemini_index_metadata` folder into your Codespaces file explorer (same level as the Python files)
+
+### Step 3: Configure Environment
+1. **Rename the environment file:** 
+   ```bash
+   mv .env.example .env
+   ```
+2. **Get your Gemini API key:**
+   - Go to [Google AI Studio](https://ai.google.dev/)
+   - Sign in with your Google account and create a new API key
+3. **Edit the .env file:**
+   - Open `.env` in the Codespaces editor
+   - Add your Gemini API key: `GEMINI_API_KEY=your_api_key_here`
+   - **Delete the entire DATABASE_URL line** (not needed for quick start, eliminates chat history though)
+   - Save the file
+
+### Step 4: Install Dependencies
+```bash
+pip install uv
+uv sync
+```
+
+### Step 5: Activate Virtual Environment
+```bash
+source .venv/bin/activate
+```
+
+### Step 6: Start the MCP Server
+```bash
+python Step7MCPServerPsxGPT.py
+```
+**Important:** Once the server starts, you'll see a "Ports" tab at the bottom of Codespaces. Click on it and **change its visibility from "Private" to "Public"** - this is essential for the connection to work.
+
+### Step 7: Start the Client (New Terminal)
+1. **Open a new terminal:** Click the `+` button in the terminal area
+2. **Activate virtual environment again:**
+   ```bash
+   source .venv/bin/activate
+   ```
+3. **Start the client:**
+   ```bash
+   chainlit run Step8MCPClientGemini.py
+   ```
+4. **Access the application:** Click on the port 8000 URL that appears in the Ports tab
+5. **Login:** Use `analyst@psx.com` / `analyst123`
+6. **Connect to MCP Server:** Follow the instructions in the interface to connect to your running MCP server
+
+🎉 **You're ready!** Try asking: *"Get me Deposits per branch for HBL, UBL and MEBL in 2024"*
+
+---
+
+## Full Setup Guide (Local Installation)
+
+For users who prefer to install psxGPT on their local machine, follow the detailed instructions below.
+
 ## How It Works
 
 psxGPT processes financial documents through an 8-step pipeline:
