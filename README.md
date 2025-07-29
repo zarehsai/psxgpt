@@ -67,19 +67,20 @@ psxGPT processes financial documents through an 8-step pipeline:
 
 **IMPORTANT:** You must install Python 3.11.9 specifically, and it must be the 64-bit version for maximum stability.
 
-**For Mac Users:**
-1. Go to [https://www.python.org/downloads/release/python-3119/](https://www.python.org/downloads/release/python-3119/)
-2. Scroll down to "Files" section
-3. Download "macOS 64-bit universal2 installer"
-4. Run the installer and follow the prompts
-
 **For Windows Users:**
 1. Go to [https://www.python.org/downloads/release/python-3119/](https://www.python.org/downloads/release/python-3119/)
 2. Scroll down to "Files" section
 3. Download "Windows installer (64-bit)" - make sure it says 64-bit
 4. Run the installer
-5. **IMPORTANT:** Check the box "Add Python to PATH" during installation
+5. **CRITICAL:** Check the box "Add Python to PATH" during installation - this is essential for the project to work
 6. Click "Install Now"
+
+**For Mac Users:**
+1. Go to [https://www.python.org/downloads/release/python-3119/](https://www.python.org/downloads/release/python-3119/)
+2. Scroll down to "Files" section  
+3. Download "macOS 64-bit universal2 installer"
+4. Run the installer and follow the prompts
+5. **Note:** Python is automatically added to PATH on macOS
 
 ### Step 3: Install Code Editor (IDE)
 
@@ -127,13 +128,25 @@ This installs the browser components needed for automated document downloading.
 1. Visit [PostgreSQL 14.18 Downloads](https://www.enterprisedb.com/downloads/postgres-postgresql-downloads)
 2. Download PostgreSQL 14.18 for Windows x86-64
 3. Run the installer and follow the setup wizard
-4. **Important:** Remember the password you set for the "postgres" user - you'll need this for your .env file
+4. **Component Selection:** To minimize installation size, only keep these components checked:
+   - ✅ **PostgreSQL Server** (required)
+   - ✅ **Command Line Tools** (required)
+   - ❌ **pgAdmin 4** (uncheck - not needed, saves ~200MB)
+   - ❌ **Stack Builder** (uncheck - not needed)
+5. **Critical:** During installation, you'll set a password for the default "postgres" user. **Write this password down** - you'll need it for your .env file
+6. **Username Note:** The default PostgreSQL username is "postgres" (not your Windows username)
 
 **For Mac Users:**
 1. Visit [PostgreSQL 14.18 Downloads](https://www.enterprisedb.com/downloads/postgres-postgresql-downloads)
 2. Download PostgreSQL 14.18 for macOS
 3. Run the installer and follow the setup wizard
-4. **Important:** Remember the password you set for the "postgres" user - you'll need this for your .env file
+4. **Component Selection:** To minimize installation size, only keep these components checked:
+   - ✅ **PostgreSQL Server** (required)
+   - ✅ **Command Line Tools** (required)
+   - ❌ **pgAdmin 4** (uncheck - not needed, saves ~200MB)
+   - ❌ **Stack Builder** (uncheck - not needed)
+5. **Critical:** During installation, you'll set a password for the default "postgres" user. **Write this password down** - you'll need it for your .env file
+6. **Username Note:** The default PostgreSQL username is "postgres" (not your Mac username)
 
 **Alternative Installation (Advanced Users):**
 - **Homebrew (Mac):** `brew install postgresql@14`
@@ -228,10 +241,21 @@ cd psxgpt
    LLAMA_CLOUD_API_KEY=your_actual_llama_cloud_key_here
    MISTRAL_API_KEY=your_actual_mistral_key_here
    
-   # Database URLs (replace 'your_password' with your PostgreSQL password)
+   # Database URLs - Standard format with default 'postgres' user
    DATABASE_URL=postgresql://postgres:your_password@localhost:5432/analyst_psx
    DATABASE_DIRECT_URL=postgresql://postgres:your_password@localhost:5432/analyst_psx
    ```
+
+**Database URL Format Explanation:**
+- `postgres` = Default PostgreSQL username (created during installation)
+- `your_password` = The password you set for the postgres user during installation
+- `localhost:5432` = Database server location and port (standard)
+- `analyst_psx` = Database name (created in next step)
+
+**Alternative Setup:** If you created a custom user during PostgreSQL installation, your URL might look like:
+```
+DATABASE_URL=postgresql://your_custom_username:your_password@localhost:5432/analyst_psx
+```
 
 #### Configure Chainlit Settings
 1. Open `.chainlit/config.toml` in your code editor
