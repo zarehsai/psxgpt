@@ -143,6 +143,11 @@ Download and install your chosen editor following the installer instructions.
 
 ### Step 5: Download and Setup psxGPT
 
+1. **Open your code editor**
+2. **Open the integrated terminal:**
+   - Press `Ctrl + ` (backtick) to open the terminal inside your code editor
+3. **Download the project:**
+
 **Recommended: Fast Clone (Downloads Latest Code Only)**
 ```bash
 git clone --depth 1 https://github.com/ishaheen10/psxgpt.git
@@ -194,39 +199,27 @@ You'll need to sign up for these services and get API keys:
 ### Step 7: Configure Environment and Install Dependencies
 
 1. **Create your environment file:**
-   - Right-click on the `.env.example` file in your project folder
-   - Select "Copy" from the context menu
-   - Right-click in the same folder and select "Paste"
-   - Rename the copied file from `.env.example - Copy` to `.env`
+   - Simply rename `.env.example` to `.env`
+   - Open the `.env` file in your code editor
+   - Paste in your API keys from Step 6
+   - Update the DATABASE_URL with your PostgreSQL password
 
-2. **Configure your API keys and database:**
-   - Double-click the `.env` file to open it in your code editor
-   - Replace the placeholder values with your actual API keys:
-   ```
-   # API Keys for psxGPT
-   GEMINI_API_KEY=your_actual_gemini_key_here
-   ANTHROPIC_API_KEY=your_actual_anthropic_key_here
-   LLAMA_CLOUD_API_KEY=your_actual_llama_cloud_key_here
-   MISTRAL_API_KEY=your_actual_mistral_key_here
-   
-   # Database URL - Standard format with default 'postgres' user
-   DATABASE_URL=postgresql://postgres:your_password@localhost:5432/analyst_psx
-   
-   # Admin login credentials for the web interface
-   ADMIN_USERNAME="analyst@psx.com"
-   ADMIN_PASSWORD="analyst123"
-   ```
-
-**Database URL Format Explanation:**
-- `postgres` = Default PostgreSQL username (created during installation)
-- `your_password` = The password you set for the postgres user during installation
-- `localhost:5432` = Database server location and port (standard)
-- `analyst_psx` = Database name (created in next step)
-
-3. **Install the project dependencies:**
+2. **Install dependencies:**
    ```bash
    pip install uv
    uv sync
+   ```
+
+3. **Enter virtual environment:**
+
+   **For Windows:**
+   ```bash
+   .venv\Scripts\activate
+   ```
+
+   **For Mac/Linux:**
+   ```bash
+   source .venv/bin/activate
    ```
 
 ### Version Compatibility Note
@@ -245,6 +238,10 @@ The specified versions (Python 3.11.9, PostgreSQL 14.18, Chainlit 2.5.5) are rec
    psql -d analyst_psx -f chainlit_schema_psx.sql
    ```
 
+3. **Verify your configuration:**
+   - Double-check that your DATABASE_URL in the `.env` file matches your PostgreSQL setup
+   - Format: `postgresql://postgres:your_password@localhost:5432/analyst_psx`
+
 ### Step 9: Start the Application
 
 **Option A: Use Pre-Built Data (Fastest)**
@@ -259,7 +256,12 @@ The specified versions (Python 3.11.9, PostgreSQL 14.18, Chainlit 2.5.5) are rec
 3. **Start the application:**
    ```bash
    python Step6CreateEmbeddings.py
-   python Step8MCPClientPsxGPT.py
+   chainlit run Step8MCPClientPsxGPT.py
+   ```
+   
+   **Alternative (for Gemini API free tier):**
+   ```bash
+   chainlit run Step8MCPClientGemini.py
    ```
 
 4. **Access the application:**
@@ -287,7 +289,12 @@ If you want to analyze your own financial documents:
    python Step5CombineMetaData.py
    python Tool2ValidateProcessing.py   # Verify data quality
    python Step6CreateEmbeddings.py
-   python Step8MCPClientPsxGPT.py
+   chainlit run Step8MCPClientPsxGPT.py
+   ```
+   
+   **Alternative (for Gemini API free tier):**
+   ```bash
+   chainlit run Step8MCPClientGemini.py
    ```
 
 *Note: Step1 scripts are designed for PSX website. For other data sources, modify the download scripts or use a browser automation tool like browser-use.*
