@@ -234,17 +234,56 @@ The specified versions (Python 3.11.9, PostgreSQL 14.18, Chainlit 2.5.5) are rec
 
 ### Step 8: Setup Database
 
-1. **Create the database:**
-   ```bash
-   createdb analyst_psx
-   ```
+**First, verify PostgreSQL is accessible:**
 
-2. **Setup the database schema:**
+1. **Test if PostgreSQL commands work:**
    ```bash
-   psql -d analyst_psx -f chainlit_schema_psx.sql
+   createdb --version
    ```
+   
+   **If you get "command not found" (Windows users):**
+   - PostgreSQL wasn't added to your system PATH during installation
+   - You need to add it manually (see instructions below)
+   
+   **Note:** Database commands use `-U postgres` to specify the PostgreSQL user (not your computer username)
 
-3. **Verify your configuration:**
+2. **Add PostgreSQL to PATH on Windows:**
+   - Press `Windows key + R`, type `sysdm.cpl`, press Enter
+   - In the System Properties window, click the **"Advanced"** tab
+   - Click the **"Environment Variables..."** button at the bottom
+   - In the Environment Variables window, look at the **top section** labeled "User variables for [your username]"
+   - Find "Path" in the list and click **"Edit..."** (if Path doesn't exist, click "New..." instead)
+   - Click **"New"** and add: `C:\Program Files\PostgreSQL\14\bin`
+   - Click **"OK"** to close the Edit window
+   - Click **"OK"** to close Environment Variables window  
+   - Click **"OK"** to close System Properties window
+   - **Restart your code editor completely** and open a new terminal
+   - Test again with `createdb --version`
+   
+   **Why User variables?** We use User variables (not System variables) because:
+   - No administrator privileges required
+   - Only affects your user account (safer on shared computers)
+   - Easier to troubleshoot if something goes wrong
+   
+   **Note:** If PostgreSQL was installed in a different location, the path might be:
+   - `C:\Program Files (x86)\PostgreSQL\14\bin` (32-bit installation)
+   - Or check your installation directory and add the `\bin` folder to PATH
+
+**Now create the database:**
+
+3. **Create the database:**
+   ```bash
+   createdb -U postgres analyst_psx
+   ```
+   You'll be prompted for the postgres password you set during PostgreSQL installation.
+
+4. **Setup the database schema:**
+   ```bash
+   psql -U postgres -d analyst_psx -f chainlit_schema_psx.sql
+   ```
+   You'll be prompted for the postgres password again.
+
+5. **Verify your configuration:**
    - Double-check that your DATABASE_URL in the `.env` file matches your PostgreSQL setup
    - Format: `postgresql://postgres:your_password@localhost:5432/analyst_psx`
 
