@@ -2,6 +2,7 @@ import os
 import time
 import sys
 import re
+import json
 import traceback
 from datetime import datetime
 from playwright.sync_api import sync_playwright, Page, ElementHandle, Browser, BrowserContext, Download, Error as PlaywrightError
@@ -13,6 +14,40 @@ TARGET_YEAR = 2024
 DOWNLOAD_DIR = f"psx_{SEARCH_KEYWORD}_reports"
 SCREENSHOTS_DIR = "screenshots"
 BASE_URL = "https://financials.psx.com.pk/"
+TICKERS_FILE = "tickers.json"
+
+# Load ticker mapping for consistent naming
+def load_company_to_ticker_mapping():
+    """Load mapping from company names to ticker symbols for consistent filename generation."""
+    try:
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        tickers_path = os.path.join(script_dir, TICKERS_FILE)
+        
+        if not os.path.exists(tickers_path):
+            print(f"Warning: {TICKERS_FILE} not found at {tickers_path}")
+            return {}
+        
+        with open(tickers_path, 'r', encoding='utf-8') as f:
+            tickers_data = json.load(f)
+        
+        # Create mapping from company name to ticker
+        company_to_ticker = {}
+        for item in tickers_data:
+            if isinstance(item, dict) and 'Symbol' in item and 'Company Name' in item:
+                symbol = item['Symbol'].strip().upper()
+                company_name = item['Company Name'].strip()
+                if symbol and company_name and company_name != '-':
+                    company_to_ticker[company_name] = symbol
+        
+        print(f"✓ Loaded {len(company_to_ticker)} company-to-ticker mappings")
+        return company_to_ticker
+        
+    except Exception as e:
+        print(f"Error loading {TICKERS_FILE}: {e}")
+        return {}
+
+# Load the mapping at startup
+COMPANY_TO_TICKER = load_company_to_ticker_mapping()
 
 # Modal Selectors (Keep from previous versions)
 MODAL_SELECTORS = [
@@ -52,6 +87,24 @@ def close_open_modal(page: Page):
                 # if modal.is_visible(): print("  WARN: Modal might still be visible.")
                 break
     except Exception as e: print(f"  Error closing modal: {e}")
+
+def get_ticker_for_company(company_name: str) -> str:
+    """Get ticker symbol for company name, with fallback to cleaned company name."""
+    # Direct lookup
+    if company_name in COMPANY_TO_TICKER:
+        return COMPANY_TO_TICKER[company_name]
+    
+    # Try to find partial matches for variations
+    company_lower = company_name.lower()
+    for full_name, ticker in COMPANY_TO_TICKER.items():
+        if company_lower in full_name.lower() or full_name.lower() in company_lower:
+            print(f"  Matched '{company_name}' to '{full_name}' -> {ticker}")
+            return ticker
+    
+    # Fallback: clean company name for filename
+    clean_name = company_name.replace(' ', '_').replace('.', '').replace(',', '').replace('Limited', 'Ltd')[:10]
+    print(f"  No ticker found for '{company_name}', using cleaned name: {clean_name}")
+    return clean_name
 
 # --- Core Logic Functions ---
 
@@ -119,18 +172,17 @@ def download_report(page: Page, link: ElementHandle, company_name: str, report_t
         original_filename = download.suggested_filename
         print(f"      Download started: {original_filename}")
 
-        # Filename logic from *original working script*
-        clean_company_name = company_name.replace(' ', '_').replace('.', '').replace(',', '')
-        clean_period_date = period_date.replace(' ', '_').replace(',', '').replace('.', '') # Original used replace, not just remove '-'
+        # Use ticker-based naming for consistency with Step1DownloadPDFsTickers.py
+        ticker = get_ticker_for_company(company_name)
+        clean_period_date = period_date.replace(' ', '_').replace(',', '').replace('.', '')
         file_extension = os.path.splitext(original_filename)[1] or ".pdf"
 
         if period_date != "Unknown":
-            # Original didn't use Q1/Q2 etc in name, used full type name
-             new_filename_base = f"{clean_company_name}_{report_type}_{clean_period_date}"
+            # Use ticker-based naming: TICKER_ReportType_Period.pdf
+             new_filename_base = f"{ticker}_{report_type}_{clean_period_date}"
         else:
-             # Original used full original filename here, let's revert to that for mimicry
-             # new_filename_base = f"{clean_company_name}_{report_type}_{download_index}" # <-- Refactored version
-             new_filename_base = f"{clean_company_name}_{report_type}_{original_filename.replace(file_extension,'')}" # <-- Closer to original intent
+             # For unknown dates, use ticker with report type
+             new_filename_base = f"{ticker}_{report_type}_{download_index}"
 
         new_filename = f"{new_filename_base}{file_extension}"
         save_path = os.path.join(DOWNLOAD_DIR, new_filename)
@@ -150,7 +202,9 @@ def download_report(page: Page, link: ElementHandle, company_name: str, report_t
         if "Target page, context or browser has been closed" in str(download_e): print("    ERROR: Browser context closed."); raise download_e
         elif "Timeout" in str(download_e): print(f"    ERROR: Timeout waiting for download '{link_text}'.")
         else: print(f"    ERROR downloading '{link_text}': {download_e}")
-        take_screenshot(page, f"error_download_{company_name.replace(' ', '_')}_{download_index}")
+        # Get ticker for screenshot naming
+        ticker = get_ticker_for_company(company_name)
+        take_screenshot(page, f"error_download_{ticker}_{download_index}")
         return False
 
 
@@ -186,10 +240,13 @@ def handle_download_modal_mimic(page: Page, company_name: str, download_button: 
 
         if not modal_visible:
             print(f"  ERROR: No modal detected for '{company_name}'. Skipping.")
-            take_screenshot(page, f"no_modal_{company_name.replace(' ', '_')}")
+            ticker = get_ticker_for_company(company_name)
+            take_screenshot(page, f"no_modal_{ticker}")
             return 0
 
-        time.sleep(1); take_screenshot(page, f"modal_{company_name.replace(' ', '_')}") # Pause and screenshot like original
+        time.sleep(1)
+        ticker = get_ticker_for_company(company_name)  
+        take_screenshot(page, f"modal_{ticker}") # Pause and screenshot like original
 
         # 3. Extract dates from modal text (using original script's inline logic)
         period_end_dates = {} # Dict: Annual -> YYYY, default -> YYYY-MM-DD
@@ -328,7 +385,8 @@ def handle_download_modal_mimic(page: Page, company_name: str, download_button: 
 
     except Exception as modal_proc_e:
          print(f"  ERROR processing modal for '{company_name}': {modal_proc_e}")
-         take_screenshot(page, f"error_modal_{company_name.replace(' ', '_')}")
+         ticker = get_ticker_for_company(company_name)
+         take_screenshot(page, f"error_modal_{ticker}")
     finally:
         # Ensure modal is closed (using original script's close logic directly)
         print(f"  Ensuring modal closed for '{company_name}' (original close logic)...")
@@ -397,7 +455,8 @@ def process_companies_by_keyword(page: Page, keyword: str, target_year: int) -> 
             total_downloads_attempted += downloads_count
         except Exception as loop_e:
             print(f"ERROR processing company '{company_name}': {loop_e}")
-            take_screenshot(page, f"error_processing_{company_name.replace(' ', '_')}")
+            ticker = get_ticker_for_company(company_name)
+            take_screenshot(page, f"error_processing_{ticker}")
             close_open_modal(page) # Attempt close on error
             print("Attempting to continue...")
 
@@ -412,6 +471,7 @@ def main():
     start_time = time.time()
     print(f"--- Script started at {datetime.now()} ---")
     print(f"--- Target Year: {TARGET_YEAR} | Keyword: '{SEARCH_KEYWORD}' ---")
+    print("--- Using ticker-based naming for consistency: TICKER_ReportType_Period.pdf ---")
     print("Setting up directories...")
     os.makedirs(DOWNLOAD_DIR, exist_ok=True); os.makedirs(SCREENSHOTS_DIR, exist_ok=True)
     print(f"  Download dir: {os.path.abspath(DOWNLOAD_DIR)}")

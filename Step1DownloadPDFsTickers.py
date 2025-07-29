@@ -503,6 +503,7 @@ def main():
     start_time = time.time()
     print(f"--- Script started at {datetime.now()} ---")
     print(f"--- Target Year: {TARGET_YEAR} | Tickers: {', '.join(TARGET_TICKERS)} ---")
+    print("--- Using ticker-based naming: TICKER_ReportType_Period.pdf ---")
     print("Setting up directories...")
     os.makedirs(DOWNLOAD_DIR, exist_ok=True); os.makedirs(SCREENSHOTS_DIR, exist_ok=True)
     print(f"  Download dir: {os.path.abspath(DOWNLOAD_DIR)}")

@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 # --- Hardcoded Input & Output Directories ---
 INPUT_DIR_PATH = Path("psx_bank_markdown")
-OUTPUT_DIR_PATH = Path("psx_markdown_clean") # Hardcoded output directory
+OUTPUT_DIR_PATH = Path("psx_bank_clean") # Hardcoded output directory
 # ---
 
 # --- Chunking Parameters ---

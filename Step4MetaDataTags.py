@@ -7,10 +7,16 @@ import re
 import math # For calculating number of batches
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import threading
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # --- Configuration ---
-INPUT_DIR = "psx_markdown_clean"
-OUTPUT_DIR = "output_metadata"
+# Define directories relative to the script location
+script_dir = os.path.dirname(os.path.abspath(__file__))
+INPUT_DIR = os.path.join(script_dir, "psx_markdown_clean")
+OUTPUT_DIR = os.path.join(script_dir, "output_metadata")
 MODEL_NAME = "gemini-2.5-flash" # 
 # Set a delay between BATCH API calls (can likely be slightly longer than per-chunk delay)
 API_CALL_DELAY_SECONDS = 2 # Increased delay to be more conservative
@@ -323,7 +329,10 @@ if __name__ == "__main__":
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
         print("Error: GEMINI_API_KEY environment variable not set.")
+        print("Please ensure you have a .env file with GEMINI_API_KEY=your_api_key")
         sys.exit(1)
+    else:
+        print("✓ GEMINI_API_KEY loaded successfully from environment")
 
     try:
         genai.configure(api_key=api_key)
@@ -334,8 +343,12 @@ if __name__ == "__main__":
         sys.exit(1)
 
     # --- Directory Setup ---
+    print(f"Input directory: {INPUT_DIR}")
+    print(f"Output directory: {OUTPUT_DIR}")
+    
     if not os.path.isdir(INPUT_DIR):
         print(f"Error: Input directory '{INPUT_DIR}' not found.")
+        print("Please ensure the psx_markdown_clean directory exists with .md files to process.")
         sys.exit(1)
     if not os.path.exists(OUTPUT_DIR):
         print(f"Creating output directory '{OUTPUT_DIR}'...")

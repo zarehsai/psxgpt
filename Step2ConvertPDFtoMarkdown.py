@@ -27,8 +27,8 @@ parser = LlamaParse(
     skip_diagonal_text=True,
     # Don't unroll columns (can help with complex layouts)
     do_not_unroll_columns=False,
-    # Output tables as HTML for better complex table handling
-    output_tables_as_HTML=True,
+    # Output tables as markdown for clean text format
+    output_tables_as_HTML=False,
     # Hide repetitive headers and footers
     hide_headers=True,
     hide_footers=True,
@@ -42,9 +42,17 @@ parser = LlamaParse(
     # bounding_box="0.05,0.05,0.05,0.05",  # Exclude 5% margin on all sides
 )
 
-# Define directories
-pdf_directory = '/Users/isfandiyarshaheen/BankGPT/psx_bank_reports'
-markdown_directory = '/Users/isfandiyarshaheen/BankGPT/psx_bank_markdown'
+# Define directories relative to the script location
+script_dir = os.path.dirname(os.path.abspath(__file__))
+pdf_directory = os.path.join(script_dir, 'psx_bank_reports')
+markdown_directory = os.path.join(script_dir, 'psx_bank_markdown')
+
+# Create directories if they don't exist
+os.makedirs(pdf_directory, exist_ok=True)
+os.makedirs(markdown_directory, exist_ok=True)
+
+print(f"PDF directory: {pdf_directory}")
+print(f"Markdown directory: {markdown_directory}")
 
 # Get list of already processed markdown files
 processed_files = {os.path.splitext(file)[0] for file in os.listdir(markdown_directory) if file.endswith('.md')}

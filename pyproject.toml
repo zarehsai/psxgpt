@@ -16,7 +16,7 @@ dependencies = [
     "llama_index.vector_stores.postgres",
     "python-dotenv",
     "mcp[cli,core]>=1.6.0",
-    "chainlit",
+    "chainlit==2.5.5",
     "anthropic",
     "asyncpg",
     "mistralai",
