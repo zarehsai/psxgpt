@@ -195,8 +195,9 @@ The specified versions (Python 3.11.9, PostgreSQL 14.18, Chainlit 2.5.5) are rec
 
 ### Step 7: Download and Setup psxGPT
 
+**Recommended: Fast Clone (Downloads Latest Code Only)**
 ```bash
-git clone https://github.com/ishaheen10/psxgpt.git
+git clone --depth 1 https://github.com/ishaheen10/psxgpt.git
 cd psxgpt
 
 # Setup environment
@@ -204,6 +205,14 @@ uv venv && source .venv/bin/activate  # Mac
 uv venv && .venv\Scripts\activate     # Windows
 uv sync
 ```
+
+**Alternative: Full History Clone (Larger Download)**
+```bash
+git clone https://github.com/ishaheen10/psxgpt.git
+cd psxgpt
+```
+
+> **💡 Note:** The repository has been optimized for size. The shallow clone (`--depth 1`) downloads only the latest code (~19MB) instead of full history, making setup much faster for most users.
 
 #### Configure API Keys
 1. Copy the example file:
