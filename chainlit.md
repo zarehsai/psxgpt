@@ -1,14 +1,11 @@
-# Welcome to Chainlit! 🚀🤖
+# Welcome to AsfiModels
 
-Hi there, Developer! 👋 We're excited to have you on board. Chainlit is a powerful tool designed to help you prototype, debug and share applications built on top of LLMs.
+I've taught financial modeling for over a decade, still serve on public company boards, and have chased startups, including a crazy plan to make Internet access affordable for all by using a robot to wrap fiber optic cables around medium voltage power lines.
 
-## Useful Links 🔗
+Two years ago I decided to drop everything and learn to code. AsfiModels is a name given to an effort I chase to someday perform financial analysis at the speed of thought. Unlike other efforts,  I do this solo and plan to keep it that way for a while.
 
-- **Documentation:** Get started with our comprehensive [Chainlit Documentation](https://docs.chainlit.io) 📚
-- **Discord Community:** Join our friendly [Chainlit Discord](https://discord.gg/k73SQ3FyUh) to ask questions, share your projects, and connect with other developers! 💬
+As a kid I absolutely loved video games. I find programming to be the greatest video game I've ever played. Through projects like psxGPT, I want to sharpen my own foundational understanding and also share with you the joy of programming.
 
-We can't wait to see what you create with Chainlit! Happy coding! 💻😊
+At a more practical level, programming opens your world to the web and gives you a chance to diversify your income streams by earning in currencies more stable than what you're used to.
 
-## Welcome screen
-
-To modify the welcome screen, edit the `chainlit.md` file at the root of your project. If you do not want a welcome screen, just leave this file empty.
+You can find me on LinkedIn (Isfandiyar Shaheen) or Twitter (@AsfiShaheen). 
