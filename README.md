@@ -145,19 +145,26 @@ Download and install your chosen editor following the installer instructions.
 6. When installation is complete, you can access Git through "Git Bash" or Command Prompt
 
 **For Mac Users:**
-1. **Check Your Mac Type:**
-   - Click the Apple menu → "About This Mac"
-   - Look at "Chip" or "Processor":
-     - **Intel** = Intel-based Mac
-     - **Apple M1/M2/M3** = Apple Silicon Mac (ARM-based)
+1. **Install Homebrew first (recommended package manager for Mac):**
+   - Open Terminal (press `Cmd + Space`, type "Terminal", and press Enter)
+   - Go to [brew.sh](https://brew.sh/) and copy the installation command from the homepage
+   - Paste the command into Terminal and press Enter
+   - **Important notes:**
+     - First-time Homebrew installation takes time (downloads ~800MB)
+     - When prompted for your password, you won't see the characters as you type, but they are being entered - this is normal for security
+     - Wait for the installation to complete
 
-2. Open Terminal (press `Cmd + Space`, type "Terminal", and press Enter)
-3. Type the following command and press Enter:
+2. **Install Git using Homebrew:**
+   ```bash
+   brew install git
    ```
+
+3. **Verify installation:**
+   ```bash
    git --version
    ```
-4. If Git is not installed, macOS will prompt you to install it automatically
-5. Follow the installation prompts
+
+**Note:** While download packages exist from git-scm.com, they tend to be dated. Homebrew ensures you get the latest stable version and makes future updates easier.
 
 ### Step 3: Install Python 3.11.9 (64-bit)
 
