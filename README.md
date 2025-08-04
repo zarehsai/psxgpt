@@ -120,8 +120,8 @@ Before starting, you'll need:
 ### Step 1: Install Code Editor (IDE)
 
 Choose one of these beginner-friendly code editors:
-- **[Windsurf](https://www.windsurf.io/)** (Recommended - AI-powered coding assistant)
-- **[Cursor](https://cursor.sh/)** (AI-powered VS Code alternative)
+- **[Windsurf](https://windsurf.com/editor/)** (Recommended - AI-powered coding assistant)
+- **[Cursor](https://cursor.com/downloads/)** (AI-powered VS Code alternative)
 - **[VS Code](https://code.visualstudio.com/)** (Popular free editor)
 
 Download and install your chosen editor following the installer instructions.
