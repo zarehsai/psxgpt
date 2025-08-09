@@ -54,6 +54,7 @@ except Exception as e:
 
 # Google GenAI for both parsing and streaming responses
 from llama_index.llms.google_genai import GoogleGenAI
+import google.generativeai as genai
 
 # One Gemini instance for **streaming answers**
 streaming_llm = GoogleGenAI(
@@ -63,14 +64,11 @@ streaming_llm = GoogleGenAI(
     timeout=120.0
 )
 
-# One "strict JSON" instance for **query-parsing** (lower temp, 8k tokens max)
-gemini_parser = GoogleGenAI(
-    model="models/gemini-2.5-flash",
-    api_key=GEMINI_API_KEY,
-    temperature=0.0,
-    max_tokens=8000,
-    timeout=60.0
-)
+# Configure official Gemini SDK for schema-enforced parsing
+genai.configure(api_key=GEMINI_API_KEY)
+
+# Structured-output parsing model (schema-enforced)
+parsing_model = genai.GenerativeModel("models/gemini-2.5-pro")
 
 # Import prompts library
 from prompts import prompts
@@ -142,6 +140,41 @@ class QueryPlan(BaseModel):
     clarification: Optional[str] = Field(default=None)
 
 # ─────────────────────────── Context & Source Management ─────────────────
+
+# JSON Schema enforcing the QueryPlan structure for Gemini structured output
+QUERY_PLAN_SCHEMA: Dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "companies": {"type": "array", "items": {"type": "string"}},
+        "intent": {"type": "string", "enum": ["statement", "analysis"]},
+        "queries": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "search_query": {"type": "string"},
+                    "metadata_filters": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "oneOf": [
+                                {"type": "string"},
+                                {"type": "number"},
+                                {"type": "boolean"},
+                                {"type": "array", "items": {"type": "string"}}
+                            ]
+                        }
+                    },
+                    "top_k": {"type": "integer"}
+                },
+                "required": ["search_query", "metadata_filters"]
+            }
+        },
+        "confidence": {"type": "number"},
+        "needs_clarification": {"type": "boolean"},
+        "clarification": {"type": ["string", "null"]}
+    },
+    "required": ["companies", "intent", "queries", "confidence", "needs_clarification"]
+}
 def format_sources(nodes: List[Dict], used_chunk_ids: Optional[List[str]] = None) -> str:
     """Enhanced source formatting with filtering for actually used chunks, grouped by file"""
     if not nodes:
@@ -289,6 +322,64 @@ def find_best_ticker_match(query_ticker: str) -> str:
     # Return original if no match found
     return query_ticker
 
+ALLOWED_ANNUAL_SETS: List[List[str]] = [["2024", "2023"], ["2022", "2021"]]
+ALLOWED_QUARTERLY_SETS: List[List[str]] = [
+    ["Q1-2025", "Q1-2024"], ["Q1-2024", "Q1-2023"], ["Q2-2024", "Q2-2023"], ["Q3-2024", "Q3-2023"],
+    ["Q1-2022", "Q1-2021"], ["Q2-2022", "Q2-2021"], ["Q3-2022", "Q3-2021"]
+]
+
+def infer_filing_filters_from_query(user_query: str) -> Dict[str, Any]:
+    """Infer filing_type and filing_period strictly limited to allowed period sets.
+    - Annual allowed: ["2024","2023"], ["2022","2021"]
+    - Quarterly allowed: Q1/Q2/Q3 for specific years as listed (no Q4 period sets)
+    If no allowed mapping exists for the query, return {}.
+    """
+    import re
+    text = user_query.strip()
+
+    def allowed_annual_for_year(y: int) -> Optional[List[str]]:
+        # Return the allowed set that CONTAINS the requested year (either first or second element)
+        for period_set in ALLOWED_ANNUAL_SETS:
+            if str(y) in period_set:
+                return period_set
+        return None
+
+    def allowed_quarter_set(q: str, y: int) -> Optional[List[str]]:
+        q = q.upper()
+        target = f"{q}-{y}"
+        # Only Q1-Q3 sets are defined; Q4 derived via annual - do not return Q4 sets
+        for period_set in ALLOWED_QUARTERLY_SETS:
+            if target in period_set:
+                return period_set
+        return None
+
+    # Quarterly first (Q1/Q2/Q3 only). For Q4, fall through to annual if possible.
+    quarter_match = re.search(r"\b(Q[1-4])\s*[-/ ]?\s*(20\d{2})\b", text, flags=re.IGNORECASE)
+    if quarter_match:
+        q = quarter_match.group(1).upper()
+        year = int(quarter_match.group(2))
+        if q == "Q4":
+            # Do not return a Q4 set; prefer annual mapping to enable Q4 = Annual - Q3 downstream
+            annual = allowed_annual_for_year(year)
+            if annual:
+                return {"filing_type": "annual", "filing_period": annual}
+            return {}
+        allowed = allowed_quarter_set(q, year)
+        if allowed:
+            return {"filing_type": "quarterly", "filing_period": allowed}
+        return {}
+
+    # Annual: only years with allowed sets
+    year_match = re.search(r"\b(20\d{2})\b", text)
+    if year_match:
+        year = int(year_match.group(1))
+        allowed = allowed_annual_for_year(year)
+        if allowed:
+            return {"filing_type": "annual", "filing_period": allowed}
+        return {}
+
+    return {}
+
 async def parse_query_with_gemini(user_query: str, conversation_context: Optional[ConversationContext] = None) -> QueryPlan:
     """Use Gemini 2.5 Pro to parse user query into structured query plan with conversation context"""
     log.info(f"Parsing query with Gemini: {user_query[:100]}...")
@@ -322,32 +413,37 @@ async def parse_query_with_gemini(user_query: str, conversation_context: Optiona
             user_prompt = context_block + user_prompt
             log.info(f"📝 Added detailed conversation context for {len(context_messages)} messages")
         
-        # Combine system prompt with user prompt and add JSON formatting instruction
-        full_prompt = prompts.PARSING_SYSTEM_PROMPT + "\n\n" + user_prompt + "\n\nRespond with ONLY the QueryPlan JSON, no other text."
-        
-        # Use manual JSON parsing (only approach that works with Gemini)
-        response = await gemini_parser.acomplete(full_prompt)
-        response_text = str(response).strip()
-        
-        log.info(f"📝 Raw Gemini response: {response_text[:200]}...")
-        
-        # Clean up markdown formatting if present
-        if response_text.startswith("```json"):
-            response_text = response_text.replace("```json", "").replace("```", "").strip()
-        elif response_text.startswith("```"):
-            response_text = response_text.replace("```", "").strip()
-        
-        # Parse JSON response
+        # Combine system prompt with user prompt
+        full_prompt = prompts.PARSING_SYSTEM_PROMPT + "\n\n" + user_prompt
+
+        # Schema-enforced structured output (Gemini official SDK)
         try:
+            resp = await asyncio.to_thread(
+                parsing_model.generate_content,
+                full_prompt,
+                generation_config=genai.GenerationConfig(
+                    response_mime_type="application/json",
+                    response_schema=QUERY_PLAN_SCHEMA,
+                    max_output_tokens=40000
+                )
+            )
+            response_text = (resp.text or "").strip()
+            log.info(f"📝 Structured Gemini response: {response_text[:200]}...")
             parsed_json = json.loads(response_text)
-            
-            # Convert to QueryPlan object for consistency
             query_plan = QueryPlan(**parsed_json)
-            
-        except (json.JSONDecodeError, TypeError, ValueError) as parse_error:
-            log.error(f"JSON parsing failed: {parse_error}")
-            log.error(f"Response text: '{response_text}'")
-            raise ValueError(f"Failed to parse Gemini response as JSON: {parse_error}")
+        except Exception as parse_error:
+            log.error(f"Schema-enforced parsing failed: {parse_error}")
+            raise
+
+        # If model didn't include filing filters despite hints, force-inject from user query
+        for q in query_plan.queries:
+            mf = q.get("metadata_filters", {})
+            if "filing_period" not in mf or "filing_type" not in mf:
+                inferred = infer_filing_filters_from_query(user_query)
+                if inferred:
+                    mf.setdefault("filing_type", inferred.get("filing_type"))
+                    mf.setdefault("filing_period", inferred.get("filing_period"))
+                q["metadata_filters"] = mf
             
         # Validate it's a QueryPlan object
         if not isinstance(query_plan, QueryPlan):
@@ -438,6 +534,17 @@ async def parse_query_with_gemini(user_query: str, conversation_context: Optiona
                 # If it's a combined statement + notes request, this query stays as statement
                 # (We'll add note queries separately later)
             
+            # Infer filing period/type from the query text if missing
+            if "filing_period" not in metadata_filters or "filing_type" not in metadata_filters:
+                inferred = infer_filing_filters_from_query(user_query)
+                if inferred:
+                    if "filing_type" not in metadata_filters and inferred.get("filing_type"):
+                        metadata_filters["filing_type"] = inferred["filing_type"]
+                        log.info(f"Inferred filing_type from query: {metadata_filters['filing_type']}")
+                    if "filing_period" not in metadata_filters and inferred.get("filing_period"):
+                        metadata_filters["filing_period"] = inferred["filing_period"]
+                        log.info(f"Inferred filing_period from query: {metadata_filters['filing_period']}")
+
             if not search_query:
                 # Create a fallback search query using available information
                 ticker = metadata_filters.get("ticker", "")
@@ -972,7 +1079,7 @@ async def welcome_message():
             "2. Under **Type*** click the dropdown and select **sse**\n"
             "3. Paste the URL above and set **Name** as **BankGPT**\n"
             "4. Click **Confirm** to connect\n\n"
-            "5. Tickers included: ABL, BAFL, BAHL, BIPL, FABL, HBL, HMB, MCP, MEBL and UBL. \n\n"
+            "5. Tickers included: BAHL, MEBL and UBL. \n\n"
             "6. For best results, always specify ticker and time period (e.g. 2022, Q1-2024, last 6 quarters)\n\n"
         )
     ).send()

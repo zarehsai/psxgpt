@@ -368,6 +368,9 @@ The specified versions (Python 3.11.9, PostgreSQL 14.18, Chainlit 2.5.5) are rec
 1. **Download pre-built search index** from Google Drive:
    [Download gemini_index_metadata.zip](https://drive.google.com/file/d/1yeH1ib5G1jBnqhzzoYBoZ0yz5s1y9MOP/view?usp=drive_link)
 
+   **Alternatively, download a smaller index with 3 tickers here if experiencing slow download speed** from Google Drive:
+   [Download gemini_index_metadata_small.zip](https://drive.google.com/file/d/1D27Z6mp0KSVVjSzmADTPnlDmVHmZD2cx/view)
+
 2. **Unzip and place in project directory:**
    - Unzip the file - you should see a folder called `gemini_index_metadata`
    - Copy this entire folder to your psxChatGPT project directory (same level as Python files)

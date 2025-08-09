@@ -15,6 +15,7 @@ dependencies = [
     "llama_index.llms.google_genai",
     "llama_index.vector_stores.postgres",
     "python-dotenv",
+    "google-generativeai>=0.7.2",
     "mcp[cli,core]>=1.6.0",
     "chainlit==2.5.5",
     "anthropic",
