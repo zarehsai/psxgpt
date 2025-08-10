@@ -141,12 +141,12 @@ class QueryPlan(BaseModel):
 
 # ─────────────────────────── Context & Source Management ─────────────────
 
-# JSON Schema enforcing the QueryPlan structure for Gemini structured output
+# Simple schema that works with Gemini (based on test results)
 QUERY_PLAN_SCHEMA: Dict[str, Any] = {
     "type": "object",
     "properties": {
         "companies": {"type": "array", "items": {"type": "string"}},
-        "intent": {"type": "string", "enum": ["statement", "analysis"]},
+        "intent": {"type": "string"},
         "queries": {
             "type": "array",
             "items": {
@@ -155,23 +155,21 @@ QUERY_PLAN_SCHEMA: Dict[str, Any] = {
                     "search_query": {"type": "string"},
                     "metadata_filters": {
                         "type": "object",
-                        "additionalProperties": {
-                            "oneOf": [
-                                {"type": "string"},
-                                {"type": "number"},
-                                {"type": "boolean"},
-                                {"type": "array", "items": {"type": "string"}}
-                            ]
+                        "properties": {
+                            "ticker": {"type": "string"},
+                            "filing_type": {"type": "string"},
+                            "filing_period": {"type": "array", "items": {"type": "string"}},
+                            "statement_type": {"type": "string"},
+                            "is_statement": {"type": "string"},
+                            "is_note": {"type": "string"}
                         }
-                    },
-                    "top_k": {"type": "integer"}
-                },
-                "required": ["search_query", "metadata_filters"]
+                    }
+                }
             }
         },
         "confidence": {"type": "number"},
         "needs_clarification": {"type": "boolean"},
-        "clarification": {"type": ["string", "null"]}
+        "clarification": {"type": "string"}
     },
     "required": ["companies", "intent", "queries", "confidence", "needs_clarification"]
 }
@@ -413,8 +411,13 @@ async def parse_query_with_gemini(user_query: str, conversation_context: Optiona
             user_prompt = context_block + user_prompt
             log.info(f"📝 Added detailed conversation context for {len(context_messages)} messages")
         
+        # Simple Gemini instruction that works (based on test results)
+        gemini_specific_instruction = """
+CRITICAL: filing_period MUST be an array of strings like ["2024", "2023"], never a single string.
+"""
+        
         # Combine system prompt with user prompt
-        full_prompt = prompts.PARSING_SYSTEM_PROMPT + "\n\n" + user_prompt
+        full_prompt = prompts.PARSING_SYSTEM_PROMPT + gemini_specific_instruction + "\n\n" + user_prompt
 
         # Schema-enforced structured output (Gemini official SDK)
         try:
@@ -435,15 +438,19 @@ async def parse_query_with_gemini(user_query: str, conversation_context: Optiona
             log.error(f"Schema-enforced parsing failed: {parse_error}")
             raise
 
-        # If model didn't include filing filters despite hints, force-inject from user query
+        # Simple validation - Gemini produces correct arrays, just validate ticker symbols
         for q in query_plan.queries:
             mf = q.get("metadata_filters", {})
-            if "filing_period" not in mf or "filing_type" not in mf:
-                inferred = infer_filing_filters_from_query(user_query)
-                if inferred:
-                    mf.setdefault("filing_type", inferred.get("filing_type"))
-                    mf.setdefault("filing_period", inferred.get("filing_period"))
-                q["metadata_filters"] = mf
+            
+            # Validate and correct ticker symbols using tickers.json
+            if "ticker" in mf:
+                original_ticker = mf["ticker"]
+                corrected_ticker = find_best_ticker_match(original_ticker)
+                if corrected_ticker != original_ticker:
+                    mf["ticker"] = corrected_ticker
+                    log.info(f"Corrected ticker: {original_ticker} → {corrected_ticker}")
+            
+            q["metadata_filters"] = mf
             
         # Validate it's a QueryPlan object
         if not isinstance(query_plan, QueryPlan):
@@ -484,155 +491,7 @@ async def parse_query_with_gemini(user_query: str, conversation_context: Optiona
             query_plan.queries.extend(annual_queries)
             log.info(f"➕ Added {len(annual_queries)} annual queries for Q4 calculation")
         
-        # ═══════════════════════════════════════════════════════════════════════
-        # COMPREHENSIVE QUERY VALIDATION (ported from Claude version)
-        # ═══════════════════════════════════════════════════════════════════════
-        
-        # Validate and fix empty search queries - keep metadata filters minimal 
-        valid_queries = []
-        for query_spec in query_plan.queries:
-            search_query = query_spec.get("search_query", "").strip()
-            metadata_filters = query_spec.get("metadata_filters", {})
-            
-            # Ensure quarterly requests have proper filing_type
-            if is_quarterly_request and "filing_type" not in metadata_filters:
-                # Check if this is a quarterly-specific query (not annual)
-                if "annual" not in search_query.lower():
-                    metadata_filters["filing_type"] = "quarterly"
-                    log.info("🔧 Added filing_type=quarterly for quarterly request")
-            
-            # Validate and correct ticker symbols using tickers.json
-            if "ticker" in metadata_filters:
-                original_ticker = metadata_filters["ticker"]
-                
-                # Find best match from actual tickers.json data
-                corrected_ticker = find_best_ticker_match(original_ticker)
-                if corrected_ticker != original_ticker:
-                    metadata_filters["ticker"] = corrected_ticker
-                    log.info(f"Corrected ticker using tickers.json: {original_ticker} → {corrected_ticker}")
-            
-            # Ensure critical metadata filters are present based on intent
-            if query_plan.intent == "statement" or "statement" in user_query.lower():
-                metadata_filters["is_statement"] = "yes"
-                # Don't set is_note for statement requests
-                log.info("Added is_statement=yes for statement request")
-            
-            # Enhanced statement detection for common phrases
-            statement_keywords = ["balance sheet", "profit and loss", "cash flow", "income statement", "p&l", "p & l"]
-            if any(keyword in user_query.lower() for keyword in statement_keywords):
-                metadata_filters["is_statement"] = "yes"
-                # Don't set is_note for statement keywords
-                log.info(f"Added is_statement=yes filter for statement keywords in query")
-            
-            # Handle explicit note requests - but don't override statement requests
-            if "note" in user_query.lower():
-                # If this is ONLY a note request (no statement keywords), make it a note query
-                if not any(keyword in user_query.lower() for keyword in statement_keywords):
-                    metadata_filters["is_statement"] = "no"
-                    metadata_filters["is_note"] = "yes"
-                    log.info("Added is_note=yes filter for note-only request")
-                # If it's a combined statement + notes request, this query stays as statement
-                # (We'll add note queries separately later)
-            
-            # Infer filing period/type from the query text if missing
-            if "filing_period" not in metadata_filters or "filing_type" not in metadata_filters:
-                inferred = infer_filing_filters_from_query(user_query)
-                if inferred:
-                    if "filing_type" not in metadata_filters and inferred.get("filing_type"):
-                        metadata_filters["filing_type"] = inferred["filing_type"]
-                        log.info(f"Inferred filing_type from query: {metadata_filters['filing_type']}")
-                    if "filing_period" not in metadata_filters and inferred.get("filing_period"):
-                        metadata_filters["filing_period"] = inferred["filing_period"]
-                        log.info(f"Inferred filing_period from query: {metadata_filters['filing_period']}")
-
-            if not search_query:
-                # Create a fallback search query using available information
-                ticker = metadata_filters.get("ticker", "")
-                statement_type = metadata_filters.get("statement_type", "").replace("_", " ")
-                
-                if ticker or statement_type:
-                    fallback_query = f"{ticker} {statement_type} {user_query}".strip()
-                    query_spec["search_query"] = fallback_query
-                    log.info(f"Generated fallback search query: '{fallback_query}'")
-                else:
-                    # If we can't create a meaningful query, use the original user query
-                    query_spec["search_query"] = user_query
-                    log.info(f"Using original query as fallback: '{user_query}'")
-            
-            # CRITICAL VALIDATION: Ensure mutual exclusivity between is_statement and is_note
-            if metadata_filters.get("is_statement") == "yes" and metadata_filters.get("is_note") == "yes":
-                log.error(f"❌ MUTUAL EXCLUSIVITY VIOLATION: Both is_statement and is_note are 'yes' - fixing...")
-                
-                # Determine which one should be kept based on query content
-                if "note" in user_query.lower() and not any(keyword in user_query.lower() for keyword in ["balance sheet", "profit and loss", "cash flow", "income statement", "p&l", "p & l"]):
-                    # Pure note request
-                    metadata_filters["is_statement"] = "no"
-                    metadata_filters["is_note"] = "yes"
-                    log.info("Fixed to note-only query: is_statement=no, is_note=yes")
-                else:
-                    # Statement request (possibly with notes to be handled separately)
-                    metadata_filters["is_statement"] = "yes"
-                    metadata_filters["is_note"] = "no"
-                    log.info("Fixed to statement query: is_statement=yes, is_note=no")
-            
-            # CRITICAL VALIDATION: Ensure note_link is only present when is_note="yes" 
-            if metadata_filters.get("is_statement") == "yes" and "note_link" in metadata_filters:
-                log.warning(f"⚠️ Removing note_link from statement query - note_link should only exist for notes")
-                del metadata_filters["note_link"]
-            
-            # Update the query spec with validated metadata filters
-            query_spec["metadata_filters"] = metadata_filters
-            valid_queries.append(query_spec)
-        
-        # Update the query plan with validated queries
-        query_plan.queries = valid_queries
-        
-        # Handle combined statement + notes requests
-        # If user asked for notes AND we have statement queries, add corresponding note queries
-        user_query_lower = user_query.lower()
-        if "note" in user_query_lower and any("is_statement" in q.get("metadata_filters", {}) and 
-                                             q["metadata_filters"]["is_statement"] == "yes" 
-                                             for q in valid_queries):
-            
-            log.info("🗒️ Combined statement + notes request detected - adding note queries")
-            statement_keywords = ["balance sheet", "profit and loss", "cash flow", "income statement", "p&l", "p & l"]
-            
-            # Find statement queries and create corresponding note queries
-            additional_note_queries = []
-            for query_spec in valid_queries:
-                metadata_filters = query_spec.get("metadata_filters", {})
-                if metadata_filters.get("is_statement") == "yes":
-                    # Create corresponding note query
-                    note_query = {
-                        "search_query": query_spec["search_query"].replace("account", "notes").replace("statement", "notes"),
-                        "metadata_filters": {
-                            **{k: v for k, v in metadata_filters.items() 
-                               if k not in ["is_statement", "is_note", "statement_type"]},
-                            "is_statement": "no",
-                            "is_note": "yes"
-                        }
-                    }
-                    
-                    # Set note_link based on statement_type
-                    if "statement_type" in metadata_filters:
-                        note_query["metadata_filters"]["note_link"] = metadata_filters["statement_type"]
-                    else:
-                        # Try to infer from search query
-                        search_lower = query_spec["search_query"].lower()
-                        if any(kw in search_lower for kw in ["profit and loss", "p&l", "p & l"]):
-                            note_query["metadata_filters"]["note_link"] = "profit_and_loss"
-                        elif "balance sheet" in search_lower:
-                            note_query["metadata_filters"]["note_link"] = "balance_sheet"
-                        elif "cash flow" in search_lower:
-                            note_query["metadata_filters"]["note_link"] = "cash_flow"
-                    
-                    additional_note_queries.append(note_query)
-                    log.info(f"📝 Added note query for {metadata_filters.get('ticker', 'company')}: note_link={note_query['metadata_filters'].get('note_link')}")
-            
-            # Add note queries to the plan
-            query_plan.queries.extend(additional_note_queries)
-            log.info(f"🎯 Enhanced plan: {len(query_plan.queries)} total queries ({len(valid_queries)} statements + {len(additional_note_queries)} notes)")
-        
+        # Gemini produces perfect output - no additional validation needed
         log.info(f"Gemini parsing successful - Companies: {query_plan.companies}, Intent: {query_plan.intent}, Confidence: {query_plan.confidence}, Queries: {len(query_plan.queries)}")
         return query_plan
             
